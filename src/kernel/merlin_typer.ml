@@ -276,6 +276,7 @@ let delayed_checks t =
   !exns
 
 let contents t = (get_value t).contents
+let typemap t  = (get_value t).typemap
 let extensions t = t.state.extensions
 
 let is_valid t =
