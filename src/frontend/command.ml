@@ -737,4 +737,7 @@ let dispatch (state : state) =
   | (Version : a request) ->
     Main_args.version_spec
 
+  | (Idle_job : a request) ->
+    false
+
   : a)
