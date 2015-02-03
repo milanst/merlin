@@ -738,6 +738,6 @@ let dispatch (state : state) =
     Main_args.version_spec
 
   | (Idle_job : a request) ->
-    false
+    Buffer.idle_job state.buffer
 
   : a)
