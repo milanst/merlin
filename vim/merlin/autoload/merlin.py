@@ -154,13 +154,20 @@ def merlin_process():
 def command(*cmd):
   return merlin_process().command(*cmd)
 
+def dumps(v, **kwargs):
+  if type(v) == type(''):
+    # LOL I CAN HAZ TYPE
+    return v
+  else:
+    return json.dumps(v, **kwargs)
+
 def dump(*cmd):
-  print(json.dumps(command('dump', *cmd)))
+  print(dumps(command('dump', *cmd)))
 
 def dump_to_file(path, *cmd):
   f = open(path, 'w')
   j = command('dump', *cmd)
-  f.write(json.dumps(j, indent=4, separators=(',', ': ')))
+  f.write(dumps(j, indent=4, separators=(',', ': ')))
 
 def dump_at_cursor(*cmd):
   line, col = vim.current.window.cursor
