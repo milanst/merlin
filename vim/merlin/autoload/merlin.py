@@ -674,9 +674,10 @@ def enclosing_tail_info(record):
 def vim_current_enclosing():
   global enclosing_types
   global current_enclosing
-  tmp = enclosing_types[current_enclosing]
+  tmp = enclosing_types[current_enclosing].copy()
   tmp['matcher'] = make_matcher(tmp['start'], tmp['end'])
   tmp['tail_info'] = enclosing_tail_info(tmp)
+  tmp['ghost'] = str(tmp['ghost'])
   return json.dumps(tmp)
 
 def vim_next_enclosing():

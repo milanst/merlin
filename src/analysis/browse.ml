@@ -29,15 +29,28 @@ open Std
 open Typedtree
 open BrowseT
 
+let rec concrete_children acc path = function
+  | [] -> acc
+  | x :: xs ->
+    let acc =
+      if x.t_loc.Location.loc_ghost then
+        match x.t_children with
+        | lazy [] -> (x, path) :: acc
+        | lazy children -> concrete_children acc (x :: path) children
+      else
+        (x, path) :: acc
+    in
+    concrete_children acc path xs
+
 let local_near pos nodes =
   let cmp = Parsing_aux.compare_pos pos in
-  let best_of ({ t_loc = l1 } as t1) ({ t_loc = l2 } as t2) =
+  let best_of ({ t_loc = l1 }, _ as t1) ({ t_loc = l2 }, _ as t2) =
     match cmp l1, cmp l2 with
     | 0, 0 ->
-      (* Cursor is inside locations: select larger one... not sure why :-) *)
+      (* Cursor is inside locations: select shortest one... not sure why :-) *)
       if Location.(Lexing.compare_pos l1.loc_end l2.loc_end) < 0
-      then t2
-      else t1
+      then t1
+      else t2
       (* Cursor inside one location, prefer it *)
     | 0, _ -> t1
     | _, 0 -> t2
@@ -47,38 +60,24 @@ let local_near pos nodes =
       then t2
       else t1
   in
-  let rec fold_ghost ~f acc = function
-    | [] -> acc
-    | x :: xs ->
-      let acc =
-        if x.t_loc.Location.loc_ghost then
-          let acc' = fold_ghost ~f acc (Lazy.force x.t_children) in
-          if acc != acc' then
-            Some x
-          else
-            acc
-        else
-          (f acc x)
-      in
-      fold_ghost ~f acc xs
-  in
-  fold_ghost None nodes ~f:(fun best t ->
-    match cmp t.t_loc, best with
-    | n, _ when n < 0 -> best
-    | _, None -> Some t
-    | _, Some t' -> Some (best_of t t')
-  )
+  List.fold_left (concrete_children [] [] nodes) ~init:None
+    ~f:(fun best t ->
+        match cmp (fst t).t_loc, best with
+        | n, _ when n < 0 -> best
+        | _, None -> Some t
+        | _, Some t' -> Some (best_of t t')
+      )
 
 let is_enclosing pos { t_loc } =
   (Parsing_aux.compare_pos pos t_loc = 0)
 
-let traverse_branch pos tree =
+let traverse_branch pos (node,root) =
   let rec traverse { t_children = lazy children } acc =
     match local_near pos children with
-    | Some t' -> traverse t' (t' :: acc)
+    | Some (t', path) -> traverse t' (t' :: path @ acc)
     | None -> acc
   in
-  traverse tree [tree]
+  traverse node (node :: root)
 
 let deepest_before pos envs =
   match local_near pos envs with

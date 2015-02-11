@@ -135,6 +135,7 @@ module Protocol_io = struct
   let with_location loc assoc =
     `Assoc (("start", Lexing.json_of_position loc.Location.loc_start) ::
             ("end",   Lexing.json_of_position loc.Location.loc_end) ::
+            ("ghost", `Bool loc.Location.loc_ghost) ::
             assoc)
 
   let optional_position = function
