@@ -47,7 +47,22 @@ let local_near pos nodes =
       then t2
       else t1
   in
-  List.fold_left nodes ~init:None ~f:(fun best t ->
+  let rec fold_ghost ~f acc = function
+    | [] -> acc
+    | x :: xs ->
+      let acc =
+        if x.t_loc.Location.loc_ghost then
+          let acc' = fold_ghost ~f acc (Lazy.force x.t_children) in
+          if acc != acc' then
+            Some x
+          else
+            acc
+        else
+          (f acc x)
+      in
+      fold_ghost ~f acc xs
+  in
+  fold_ghost None nodes ~f:(fun best t ->
     match cmp t.t_loc, best with
     | n, _ when n < 0 -> best
     | _, None -> Some t
@@ -134,8 +149,8 @@ let of_typer_contents contents =
       BrowseT.of_node ~loc ~env BrowseT.Dummy
     | (`Str _ | `Sg _) as item ->
       let node, env = match item with
-        | `Str str -> BrowseT.Structure str, str.str_final_env
-        | `Sg sg -> BrowseT.Signature sg, sg.sig_final_env
+        | `Str (_,str) -> BrowseT.Structure str, str.str_final_env
+        | `Sg (_,sg) -> BrowseT.Signature sg, sg.sig_final_env
       in
       let browse = BrowseT.of_node node in
       let browse = fix_loc env browse in

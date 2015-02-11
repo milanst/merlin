@@ -631,15 +631,21 @@ let dispatch (state : state) =
   | (Dump (`Typer `Input) : a request) ->
     with_typer state @@ fun typer ->
     let ppf, to_string = Format.to_string () in
-    Typer.dump ppf typer;
+    List.iter (function
+        | `Sg (sg,_) -> Printast.interface ppf sg
+        | `Str (str,_) -> Printast.implementation ppf str
+        | `Fail (_,loc) ->
+          Format.fprintf ppf "<failed to type at %a>\n"
+            Location.print loc
+      ) (Typer.contents typer);
     `String (to_string ())
 
   | (Dump (`Typer `Output) : a request) ->
     with_typer state @@ fun typer ->
     let ppf, to_string = Format.to_string () in
     List.iter (function
-        | `Sg sg -> Printtyped.interface ppf sg
-        | `Str str -> Printtyped.implementation ppf str
+        | `Sg (_,sg) -> Printtyped.interface ppf sg
+        | `Str (_,str) -> Printtyped.implementation ppf str
         | `Fail (_,loc) ->
           Format.fprintf ppf "<failed to type at %a>\n"
             Location.print loc

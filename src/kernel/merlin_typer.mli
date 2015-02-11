@@ -36,8 +36,8 @@ val update : Merlin_parser.t -> t -> t
 val env : t -> Env.t
 
 type content =
-  [ `Str of Typedtree.structure
-  | `Sg of Typedtree.signature
+  [ `Str of Parsetree.structure * Typedtree.structure
+  | `Sg of Parsetree.signature * Typedtree.signature
   | `Fail of Env.t * Location.t
   ]
 

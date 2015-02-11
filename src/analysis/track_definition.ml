@@ -420,8 +420,8 @@ and browse_cmts ~root modules =
   File_switching.move_to ?digest:cmt_infos.cmt_source_digest root ;
   match
     match cmt_infos.cmt_annots with
-    | Interface intf      -> `Sg intf, false
-    | Implementation impl -> `Str impl, true
+    | Interface intf      -> `Sg ([],intf), false
+    | Implementation impl -> `Str ([],impl), true
     | Packed (_, files)   -> `Pack files, true
     | _ ->
       (* We could try to work with partial cmt files, but it'd probably fail
@@ -445,7 +445,7 @@ and browse_cmts ~root modules =
     begin match modules with
     | [] -> `Not_found
     | mod_name :: modules ->
-      let file = 
+      let file =
         List.find files ~f:(fun s -> file_path_to_mod_name s = mod_name)
       in
       File_switching.allow_movement () ;
@@ -508,6 +508,10 @@ and resolve_mod_alias ~source node path rest =
     let full_path = (Path.to_string_list path') @ path in
     check_item ~source full_path rest
   | `Sg _ | `Str _ as x ->
+    let x = match x with
+      | `Sg v -> `Sg ([],v)
+      | `Str v -> `Str ([],v)
+    in
     let lst = get_top_items (Browse.of_typer_contents [ x ]) @ rest in
     check_item ~source path lst
   | `Functor msg ->
@@ -737,7 +741,7 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
     | node :: _ ->
       let open BrowseT in
       match node.t_node with
-      | Pattern p -> 
+      | Pattern p ->
         Logger.debugf section (fun fmt p ->
           Format.pp_print_string fmt "current node is: " ;
           Printtyped.pattern 0 fmt p

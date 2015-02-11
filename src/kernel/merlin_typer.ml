@@ -39,8 +39,8 @@ let caught catch =
   caught
 
 type content =
-  [ `Str of Typedtree.structure
-  | `Sg of Typedtree.signature
+  [ `Str of Parsetree.structure * Typedtree.structure
+  | `Sg of Parsetree.signature * Typedtree.signature
   | `Fail of Env.t * Location.t
   ]
 
@@ -135,21 +135,21 @@ let append catch loc item step =
   try
     let env, contents =
       match item with
-      | `str str ->
-        let structure,_,env = Typemod.type_structure step.env str loc in
-        env, `Str structure :: step.contents
-      | `sg sg ->
-        let sg = Typemod.transl_signature step.env sg in
-        sg.Typedtree.sig_final_env, `Sg sg :: step.contents
-      | `fake str ->
-        let structure,_,_ =
+      | `str pstr ->
+        let tstr,_,env = Typemod.type_structure step.env pstr loc in
+        env, `Str (pstr, tstr) :: step.contents
+      | `sg psg ->
+        let tsg = Typemod.transl_signature step.env psg in
+        tsg.Typedtree.sig_final_env, `Sg (psg, tsg) :: step.contents
+      | `fake pstr ->
+        let tstr,_,_ =
           Parsing_aux.catch_warnings (ref [])
-            (fun () -> Typemod.type_structure step.env str loc)
+            (fun () -> Typemod.type_structure step.env pstr loc)
         in
         let browse =
-          BrowseT.of_node ~loc ~env:step.env (BrowseT.Structure structure)
+          BrowseT.of_node ~loc ~env:step.env (BrowseT.Structure tstr)
         in
-        (last_env browse).BrowseT.t_env, `Str structure :: step.contents
+        (last_env browse).BrowseT.t_env, `Str (pstr, tstr) :: step.contents
       | `none -> step.env, step.contents
     in
     let snapshot = Btype.snapshot () in
