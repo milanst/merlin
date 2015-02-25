@@ -588,7 +588,6 @@ let dispatch (state : state) =
     Project.invalidate ~flush:true (Buffer.project state.buffer)
 
   | (Errors : a request) ->
-    Buffer.learn state.buffer;
     begin try
         let cmp (l1,_) (l2,_) =
           Lexing.compare_pos l1.Location.loc_start l2.Location.loc_start in
@@ -620,7 +619,10 @@ let dispatch (state : state) =
           | [] ->
             List.rev acc, err_typer in
         let err_parser, err_typer = extract_warnings [] err_parser in
-        List.(map ~f:snd (merge ~cmp err_lexer (merge ~cmp err_parser err_typer)))
+        let merge err = List.merge ~cmp err in
+        match merge err_lexer (merge err_parser err_typer) with
+        | [] -> Buffer.learn state.buffer; []
+        | errs -> List.(map ~f:snd errs)
       with exn -> match Error_report.strict_of_exn exn with
         | None -> raise exn
         | Some (_loc, err) -> [err]
