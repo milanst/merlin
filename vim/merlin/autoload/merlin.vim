@@ -173,6 +173,30 @@ function! merlin#SetFlags(...)
   py merlin.vim_add_flags(*vim.eval("a:000"))
 endfunction
 
+function! merlin#LogSectionsAll(ArgLead, CmdLine, CursorPos)
+  let l:sections = []
+  py merlin.vim_log_list_sections("l:sections", "all")
+  return join(l:sections, "\n")
+endfunction
+
+function! merlin#LogSectionsEnabled(ArgLead, CmdLine, CursorPos)
+  let l:sections = []
+  py merlin.vim_log_list_sections("l:sections", "enabled")
+  return join(l:sections, "\n")
+endfunction
+
+function! merlin#LogStart(level, ...)
+  py merlin.vim_log_start(vim.eval("a:level"), vim.eval("a:000"))
+endfunction
+
+function! merlin#LogStop(sections)
+  py merlin.vim_log_stop(vim.eval("a:000"))
+endfunction
+
+function! merlin#LogTo(dest)
+  py merlin.vim_log_to(vim.eval("expand(a:dest)"))
+endfunction
+
 function! s:ShowTypeEnclosing(type)
   if empty(a:type)
     return
@@ -509,6 +533,12 @@ function! merlin#Register()
 
   command! -buffer -nargs=0 ErrorCheck call merlin#Errors()
   command! -buffer -nargs=0 MerlinErrorCheck call merlin#Errors()
+
+  command! -buffer -nargs=1 -complete=file MerlinLogTo call merlin#LogTo(<q-args>)
+  command! -buffer -complete=custom,merlin#LogSectionsAll -nargs=* MerlinLogError call merlin#LogStart("error", <f-args>)
+  command! -buffer -complete=custom,merlin#LogSectionsAll -nargs=* MerlinLogInfo call merlin#LogStart("info", <f-args>)
+  command! -buffer -complete=custom,merlin#LogSectionsAll -nargs=* MerlinLogDebug call merlin#LogStart("debug", <f-args>)
+  command! -buffer -complete=custom,merlin#LogSectionsEnabled -nargs=* MerlinLogStop call merlin#LogStop(<f-args>)
 
   setlocal omnifunc=merlin#Complete
   map  <buffer> <LocalLeader>t :TypeOf<return>
