@@ -116,7 +116,7 @@ type _ request =
     :  Error_report.t list request
   | Dump
     :  [`Env of [`Normal|`Full] * position option
-       |`Sig|`Parser|`Exn|`Browse|`Recover|`Typer of [`Input|`Output] | `Tokens]
+       |`Itemset of int|`Sig|`Parser|`Exn|`Browse|`Recover|`Typer of [`Input|`Output] | `Tokens]
     -> Json.json request
   | Which_path
     :  string list
